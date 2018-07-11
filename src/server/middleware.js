@@ -1,7 +1,6 @@
 import React from 'react';
 import express from 'express';
 import { renderToNodeStream } from 'react-dom/server';
-import { AppContainer } from 'react-hot-loader';
 import Html from '../components/Html';
 import App from '../components/App';
 
