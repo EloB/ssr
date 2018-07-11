@@ -17,13 +17,7 @@ export default (env, argv) => {
           ...(DEVELOPMENT ? [webpackHotModule] : []),
           join(__dirname, './src/server/index'),
         ],
-        web: [
-          ...(DEVELOPMENT ? [
-            'webpack-dev-server/client?http://localhost:8080/',
-            'webpack/hot/only-dev-server',
-          ] : []),
-          join(__dirname, './src/client'),
-        ],
+        web: join(__dirname, './src/client'),
       }[target],
     },
     output: {
@@ -48,19 +42,20 @@ export default (env, argv) => {
         new NamedModulesPlugin(),
         new HotModuleReplacementPlugin(),
       ] : []),
+      // If target node then write to disk
       ...(target === 'node' ? [new WriteFilePlugin()] : []),
     ],
     externals: [
       ...(target === 'node' ? [nodeExternals({ whitelist: [webpackHotModule] })] : []),
     ],
     devServer: {
-      inline: false,
-      hotOnly: true,
       contentBase: false,
+      hot: true,
       after: (app) => {
         let once = true;
         app.use((req, res, next) => {
           if (once) {
+            // Wait until first build and then use ssr middleware
             app.use(require('./dist/node/node').default)
             once = false;
           }
