@@ -1,30 +1,18 @@
 import express from 'express';
+import middleware from './middleware';
 
-const middleware = {};
-const reloadMiddleware = () => Object.assign(middleware, {
-  server: require('./middleware/server').default,
-  client: require('./middleware/client').default,
-});
-
-reloadMiddleware();
+let serverMiddleware = middleware;
 
 const app = express();
 
-const PORT = process.env.PORT || 3000;
-
-app.use((req, res, next) => middleware.server(req, res, next));
-app.use((req, res, next) => middleware.client(req, res, next));
-
-app.listen(PORT, (error) => {
-  if (error) return console.error(error);
-  console.log(`Webserver started on ${PORT}`)
-});
-
 if (module.hot) {
-  module.hot.accept([
-    './middleware/server',
-    './middleware/client',
-  ], reloadMiddleware);
+  app.use((req, res, next) => serverMiddleware(req, res, next));
+  module.hot.accept('./middleware', () => {
+    serverMiddleware = require('./middleware').default;
+  });
+} else {
+  app.use(serverMiddleware);
 }
 
 export default app;
+

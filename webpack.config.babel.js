@@ -3,7 +3,7 @@ import { join, relative } from 'path';
 import nodeExternals from 'webpack-node-externals';
 import WriteFilePlugin from 'write-file-webpack-plugin';
 
-const poll = 'webpack/hot/poll?1000';
+const webpackHotModule = 'webpack/hot/poll?1000';
 
 export default (env, argv) => {
   const DEVELOPMENT = argv.mode === 'development';
@@ -12,22 +12,25 @@ export default (env, argv) => {
     target,
     mode: argv.mode,
     entry: {
-      node: [
-        ...(DEVELOPMENT ? [poll] : []),
-        join(__dirname, './src/server/index'),
-      ],
-      web: [
-        ...(DEVELOPMENT ? [
-          'webpack-dev-server/client?http://localhost:8080/',
-          'webpack/hot/only-dev-server',
-        ] : []),
-        join(__dirname, './src/client'),
-      ],
-    }[target],
+      [target]: {
+        node: [
+          ...(DEVELOPMENT ? [webpackHotModule] : []),
+          join(__dirname, './src/server/index'),
+        ],
+        web: [
+          ...(DEVELOPMENT ? [
+            'webpack-dev-server/client?http://localhost:8080/',
+            'webpack/hot/only-dev-server',
+          ] : []),
+          join(__dirname, './src/client'),
+        ],
+      }[target],
+    },
     output: {
       path: join(__dirname, 'dist', target),
       filename: '[name].js',
       publicPath: '/',
+      libraryTarget: target === 'node' ? 'commonjs' : 'var',
     },
     module: {
       rules: [
@@ -48,12 +51,22 @@ export default (env, argv) => {
       ...(target === 'node' ? [new WriteFilePlugin()] : []),
     ],
     externals: [
-      ...(target === 'node' ? [nodeExternals({ whitelist: [poll] })] : []),
+      ...(target === 'node' ? [nodeExternals({ whitelist: [webpackHotModule] })] : []),
     ],
     devServer: {
-      proxy: { '*': 'http://localhost:3000' },
       inline: false,
       hotOnly: true,
+      contentBase: false,
+      after: (app) => {
+        let once = true;
+        app.use((req, res, next) => {
+          if (once) {
+            app.use(require('./dist/node/node').default)
+            once = false;
+          }
+          next();
+        });
+      },
     },
   }));
 };
