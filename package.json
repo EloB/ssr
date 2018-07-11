@@ -3,7 +3,7 @@
   "main": "index.js",
   "scripts": {
     "clean": "rimraf dist",
-    "dev": "npm run clean && webpack-dev-server --mode=development",
+    "dev": "webpack-dev-server --mode=development",
     "build": "webpack --mode=production",
     "start": "node ."
   },
@@ -16,7 +16,7 @@
     "wait-on": "^2.1.0",
     "webpack": "^4.15.1",
     "webpack-cli": "^3.0.8",
-    "webpack-dev-server": "^3.1.4",
+    "webpack-dev-server": "elob/webpack-dev-server#ssr-friendly",
     "webpack-node-externals": "^1.7.2",
     "write-file-webpack-plugin": "^4.3.2"
   },
